@@ -2,7 +2,10 @@
 
 A lightweight, minimalist Windows application that transforms your PC into a Bluetooth Audio Receiver (A2DP Sink). Seamlessly stream music, videos, or game audio from your smartphone or tablet directly to your computer's speakers.
 
-![Screenshot](screenshot.png) ## ✨ Features
+<img width="336" height="393" alt="image" src="https://github.com/user-attachments/assets/467b023c-84c5-4ad5-aaf9-462e0930d964" />
+
+
+## ✨ Features
 
 * **One-Click Audio Routing:** Easily establish a direct audio connection with your paired Bluetooth devices.
 * **⚡ Smart Auto-Connect:** The application remembers your last successfully connected device and automatically attempts to reconnect upon the next launch.
