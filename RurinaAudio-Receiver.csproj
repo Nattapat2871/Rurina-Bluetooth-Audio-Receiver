@@ -9,7 +9,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     
     <ApplicationIcon>appicon.ico</ApplicationIcon>
-    
-  </PropertyGroup>
+
+    <Company>nattapat2871</Company>
+    <Product>Rurina Bluetooth Audio Receiver</Product>
+    <Description>A minimal Bluetooth Audio Receiver for Windows.</Description>
+    <Copyright>Copyright © 2026 nattapat2871</Copyright>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    </PropertyGroup>
 
 </Project>
