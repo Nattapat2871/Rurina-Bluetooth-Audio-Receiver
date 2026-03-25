@@ -25,7 +25,7 @@ namespace RurinaAudio_Receiver
         private DeviceInformation? selectedDevice = null;
         private AudioPlaybackConnection? audioConnection;
 
-        private readonly string configPath = "last_device.txt";
+        private readonly string configPath = Path.Combine(Path.GetTempPath(), "Rurina-Bluetooth-Audio-Receiver_last_device.txt");
         private readonly string githubUrl = "https://github.com/Nattapat2871/Rurina-Bluetooth-Audio-Receiver";
 
         public Form1()
@@ -156,7 +156,6 @@ namespace RurinaAudio_Receiver
         {
             foreach (Control ctrl in pnlDevices.Controls)
             {
-                // รีเซ็ตปุ่มอื่นให้กลับเป็นสีเทา และสั่งให้วาดใหม่ (Invalidate) เพื่อล้างสี
                 if (ctrl is Button b) 
                 {
                     b.BackColor = Color.FromArgb(45, 45, 45);
@@ -165,7 +164,7 @@ namespace RurinaAudio_Receiver
             }
 
             btn.BackColor = Color.FromArgb(0, 80, 150);
-            btn.Invalidate(); // สั่งให้ปุ่มที่ถูกเลือกวาดตัวเองใหม่ด้วยสีฟ้า
+            btn.Invalidate(); 
             
             selectedDevice = device;
             lblStatus.Text = $"Selected: {device.Name}";
@@ -211,33 +210,29 @@ namespace RurinaAudio_Receiver
                         
                         Button deviceBtn = new Button
                         {
-                            Text = "", // ปล่อย Text ให้ว่าง เพราะเราจะวาดลงไปเอง
-                            Size = new Size(250, 45), // เพิ่มความสูงให้ตัวโน้ตใหญ่ๆ สบายขึ้น
+                            Text = "", 
+                            Size = new Size(250, 45), 
                             FlatStyle = FlatStyle.Flat,
                             BackColor = Color.FromArgb(45, 45, 45), 
                             ForeColor = Color.White,
                             Margin = new Padding(5)
                         };
                         deviceBtn.FlatAppearance.BorderSize = 0;
-
-                        // เริ่มระบบ Custom Paint วาดไอคอนและข้อความเอง
+ 
                         deviceBtn.Paint += (s, ev) =>
                         {
                             Button btn = (Button)s!;
                             string iconText = "🎵";
                             string deviceName = device.Name;
 
-                            // ตั้งค่าฟอนต์ (ไอคอนไซส์ 16, ตัวอักษรไซส์ 10)
                             using (Font iconFont = new Font("Segoe UI Emoji", 16, FontStyle.Regular))
                             using (Font textFont = new Font("Segoe UI", 10, FontStyle.Bold))
                             {
-                                // วาดไอคอน
                                 Size iconSize = TextRenderer.MeasureText(ev.Graphics, iconText, iconFont);
                                 TextRenderer.DrawText(ev.Graphics, iconText, iconFont, 
                                     new Point(10, (btn.Height - iconSize.Height) / 2), 
                                     btn.ForeColor);
 
-                                // วาดตัวหนังสือต่อท้าย และตัดเป็น ... ถ้ายาวเกินกรอบ
                                 Rectangle textBounds = new Rectangle(
                                     15 + iconSize.Width, 
                                     0, 
