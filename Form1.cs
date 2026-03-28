@@ -5,9 +5,10 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D; 
 using System.IO; 
-using System.Runtime.InteropServices; // เพิ่มสำหรับเรียกใช้ API บังคับ Title Bar สีดำ
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.Win32; 
 using Windows.Devices.Enumeration;
 using Windows.Media.Audio;
 
@@ -15,10 +16,8 @@ namespace RurinaAudio_Receiver
 {
     public partial class Form1 : Form
     {
-        // --- ส่วนของการเรียกใช้ Windows API เพื่อทำ Dark Title Bar ---
         [DllImport("DwmApi")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, int[] attrValue, int attrSize);
-        // --------------------------------------------------------
 
         private Label lblStatus = null!;
         private FlowLayoutPanel pnlDevices = null!; 
@@ -26,6 +25,7 @@ namespace RurinaAudio_Receiver
         private ModernButton btnClose = null!; 
         private Label lblTip = null!;
         private LinkLabel lnkGithub = null!; 
+        private CheckBox chkRunOnStartup = null!; 
         private NotifyIcon trayIcon = null!;
         private ContextMenuStrip trayMenu = null!;
 
@@ -34,39 +34,54 @@ namespace RurinaAudio_Receiver
         private AudioPlaybackConnection? audioConnection;
 
         private readonly string configPath = Path.Combine(Path.GetTempPath(), "Rurina-Bluetooth-Audio-Receiver_last_device.txt");
+        private readonly string startupPrefPath = Path.Combine(Path.GetTempPath(), "Rurina-Bluetooth-Audio-Receiver_startup_pref.txt");
+        
+        private readonly string startupKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+        private readonly string appName = "RurinaAudioReceiver";
+        
         private readonly string githubUrl = "https://github.com/Nattapat2871/Rurina-Bluetooth-Audio-Receiver";
+
+        private const int WM_SHOWME = 0x0401;
 
         public Form1()
         {
             InitializeUI();
         }
 
-        // แทรกแซงกระบวนการสร้างหน้าต่าง เพื่อบังคับใช้ Dark Mode
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            // โค้ด 20 คือ DWMWA_USE_IMMERSIVE_DARK_MODE สำหรับ Windows 11 (และ Win 10 เวอร์ชั่นใหม่ๆ)
             int[] useImmersiveDarkMode = { 1 };
             DwmSetWindowAttribute(this.Handle, 20, useImmersiveDarkMode, 4);
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == WM_SHOWME)
+            {
+                if (!this.Visible || this.WindowState == FormWindowState.Minimized)
+                {
+                    this.Show();
+                    this.WindowState = FormWindowState.Normal;
+                    this.Activate(); 
+                }
+            }
+            base.WndProc(ref m);
         }
 
         private void InitializeUI()
         {
             this.Text = "Rurina Bluetooth Audio Receiver";
-            
-            // ใช้ ClientSize กำหนดพื้นที่ด้านในจริงๆ ให้เล็กลงและพอดี
             this.ClientSize = new Size(350, 380); 
             this.StartPosition = FormStartPosition.CenterScreen;
-            
-            // ปรับพื้นหลังให้ดำสนิทขึ้น (เกือบดำแท้)
             this.BackColor = Color.FromArgb(12, 12, 12); 
             this.ForeColor = Color.FromArgb(244, 244, 245);
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
-            
-            // เปิดให้แสดงไอคอนแอปด้านบน และดึงไอคอนจากไฟล์ exe มาใช้
             this.ShowIcon = true; 
-            try { this.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
+            
+            string exePath = Environment.ProcessPath ?? Application.ExecutablePath;
+            try { this.Icon = Icon.ExtractAssociatedIcon(exePath); } catch { }
 
             lblStatus = new Label 
             { 
@@ -93,7 +108,7 @@ namespace RurinaAudio_Receiver
                 BackColor = Color.FromArgb(59, 130, 246), 
                 NormalColor = Color.FromArgb(59, 130, 246),
                 HoverColor = Color.FromArgb(96, 165, 250), 
-                DisabledColor = Color.FromArgb(39, 39, 42), // เปลี่ยนสีตอน Disable ให้กลืนกับจอ
+                DisabledColor = Color.FromArgb(39, 39, 42),
                 Enabled = false 
             };
             btnOpen.Click += BtnOpen_Click;
@@ -120,10 +135,34 @@ namespace RurinaAudio_Receiver
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
+            chkRunOnStartup = new CheckBox
+            {
+                Text = "Run on startup",
+                Location = new Point(225, 345), 
+                AutoSize = true,
+                Font = new Font("Segoe UI", 9, FontStyle.Regular),
+                ForeColor = Color.FromArgb(161, 161, 170),
+                Cursor = Cursors.Hand
+            };
+
+            bool isStartup = true; 
+            if (File.Exists(startupPrefPath))
+            {
+                isStartup = File.ReadAllText(startupPrefPath) == "1";
+            }
+            else
+            {
+                SetStartupRegistryState(true);
+                File.WriteAllText(startupPrefPath, "1");
+            }
+
+            chkRunOnStartup.Checked = isStartup;
+            chkRunOnStartup.CheckedChanged += ChkRunOnStartup_CheckedChanged;
+
             lnkGithub = new LinkLabel
             {
                 Text = "Open GitHub", 
-                Location = new Point(15, 345), 
+                Location = new Point(15, 348), 
                 AutoSize = true,
                 Font = new Font("Segoe UI", 9, FontStyle.Regular),
                 ForeColor = Color.FromArgb(161, 161, 170), 
@@ -141,7 +180,7 @@ namespace RurinaAudio_Receiver
             trayMenu.Items.Add("Exit", null, (s, e) => { Application.Exit(); });
 
             trayIcon = new NotifyIcon();
-            trayIcon.Icon = this.Icon;
+            trayIcon.Icon = this.Icon ?? SystemIcons.Application; 
             trayIcon.Text = "Rurina Bluetooth Audio Receiver";
             trayIcon.Visible = true;
             trayIcon.ContextMenuStrip = trayMenu; 
@@ -154,13 +193,45 @@ namespace RurinaAudio_Receiver
             this.Controls.Add(btnOpen);
             this.Controls.Add(btnClose);
             this.Controls.Add(lblTip);
+            this.Controls.Add(chkRunOnStartup);
             this.Controls.Add(lnkGithub); 
+        }
+
+        private void SetStartupRegistryState(bool enable)
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(startupKey, true))
+                {
+                    if (key != null)
+                    {
+                        if (enable)
+                        {
+                            string exePath = Environment.ProcessPath ?? Application.ExecutablePath;
+                            key.SetValue(appName, $"\"{exePath}\"");
+                        }
+                        else
+                        {
+                            key.DeleteValue(appName, false);
+                        }
+                    }
+                }
+            }
+            catch { } 
+        }
+
+        private void ChkRunOnStartup_CheckedChanged(object? sender, EventArgs e)
+        {
+            bool isChecked = chkRunOnStartup.Checked;
+            SetStartupRegistryState(isChecked);
+            File.WriteAllText(startupPrefPath, isChecked ? "1" : "0");
         }
 
         private void ShowForm()
         {
             this.Show();
             this.WindowState = FormWindowState.Normal;
+            this.Activate();
         }
 
         protected override async void OnLoad(EventArgs e)
