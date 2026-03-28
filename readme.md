@@ -9,7 +9,8 @@
 
 A lightweight, minimalist Windows application that transforms your PC into a Bluetooth Audio Receiver (A2DP Sink). Seamlessly stream music, videos, or game audio from your smartphone or tablet directly to your computer's speakers.
 
-<img width="336" height="393" alt="image" src="https://github.com/user-attachments/assets/467b023c-84c5-4ad5-aaf9-462e0930d964" />
+<img width="354" height="407" alt="image" src="https://github.com/user-attachments/assets/482e2a6c-b8f3-4f97-8ccf-5c809ff7792c" />
+
 
 ## ✨ Features
 
