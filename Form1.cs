@@ -289,7 +289,7 @@ namespace RurinaAudio_Receiver
                 using JsonDocument doc = JsonDocument.Parse(jsonResponse);
                 
                 string latestVersionStr = doc.RootElement.GetProperty("tag_name").GetString() ?? "";
-                latestVersionStr = latestVersionStr.Replace("v", "").Trim();
+                latestVersionStr = latestVersionStr.ToLower().Replace("v.", "").Replace("v", "").Trim();
                 
                 if (!Version.TryParse(latestVersionStr, out Version? latestVersion)) return false;
 
