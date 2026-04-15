@@ -17,11 +17,16 @@ namespace RurinaAudio_Receiver
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
 
+        [DllImport("shell32.dll", SetLastError = true)]
+        private static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
+
         private const int WM_SHOWME = 0x0401; 
 
         [STAThread]
         static void Main()
         {
+            try { SetCurrentProcessExplicitAppUserModelID("Nattapat2871.RurinaAudioReceiver"); } catch { }
+
             Application.ThreadException += (sender, args) => LogCrashAndExit(args.Exception);
             AppDomain.CurrentDomain.UnhandledException += (sender, args) => LogCrashAndExit(args.ExceptionObject as Exception);
 
@@ -71,7 +76,7 @@ namespace RurinaAudio_Receiver
                     Dock = DockStyle.Top,
                     Height = 350,
                     BackColor = Color.FromArgb(24, 24, 27),
-                    ForeColor = Color.FromArgb(248, 113, 113), // สีข้อความ Error แดงอ่อน
+                    ForeColor = Color.FromArgb(248, 113, 113),
                     Font = new Font("Consolas", 10F),
                     Text = $"[{DateTime.Now}] CRASH LOG:\r\n\r\n{ex.ToString()}",
                     BorderStyle = BorderStyle.None,
